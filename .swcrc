@@ -1,0 +1,19 @@
+{
+    "$schema": "https://swc.rs/schema.json",
+    "jsc": {
+        "parser": {
+            "syntax": "typescript",
+            "tsx": false,
+            "decorators": true,
+            "dynamicImport": true
+        },
+        "target": "es5",
+        "paths": {
+            "@/*": ["./src/*"]
+        },
+        "baseUrl": "."
+    },
+    "module": {
+        "type": "commonjs"
+    }
+}

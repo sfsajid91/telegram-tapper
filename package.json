@@ -1,0 +1,41 @@
+{
+    "name": "telegram-tapper",
+    "version": "1.0.0",
+    "description": "A simple fun project that automates telegram tapping games",
+    "main": "index.js",
+    "scripts": {
+        "build": "swc src -d dist -D --strip-leading-paths --delete-dir-on-start",
+        "start": "node dist/index.js",
+        "dev": "nodemon"
+    },
+    "keywords": [
+        "telegram",
+        "tapper",
+        "automation",
+        "tapswap",
+        "tapswapbot",
+        "hamsterkombat"
+    ],
+    "author": "Shaykh Farhan",
+    "license": "ISC",
+    "devDependencies": {
+        "@swc-node/register": "^1.10.0",
+        "@swc/cli": "^0.4.0",
+        "@swc/core": "^1.6.6",
+        "@types/node": "^20.14.9",
+        "@typescript-eslint/eslint-plugin": "^7.15.0",
+        "@typescript-eslint/parser": "^7.15.0",
+        "eslint": "^8",
+        "nodemon": "^3.1.4",
+        "prettier": "^3.3.2",
+        "typescript": "^5.5.3"
+    },
+    "dependencies": {
+        "axios": "^1.7.2",
+        "chalk": "^4.1.2",
+        "dotenv": "^16.4.5",
+        "figlet": "^1.7.0",
+        "inquirer": "^8.2.6",
+        "telegram": "^2.22.2"
+    }
+}
