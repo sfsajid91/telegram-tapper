@@ -8,3 +8,6 @@ dist
 .env.development.local
 .env.test.local
 
+
+# sessions directory
+sessions
