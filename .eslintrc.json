@@ -12,8 +12,8 @@
         "sourceType": "module"
     },
     "plugins": ["@typescript-eslint"],
+    "ignorePatterns": ["node_modules/", "dist/"],
     "rules": {
-        "indent": ["error", 4],
         "linebreak-style": ["error", "unix"],
         "quotes": ["error", "single"],
         "semi": ["error", "always"]
