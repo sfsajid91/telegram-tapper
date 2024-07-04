@@ -74,6 +74,12 @@ const startHamsterAction = async (session: Session, action: Action) => {
                 handleDailyCipher(axiosInstance, session),
                 handleDailyReward(axiosInstance, session),
                 handleDailyCombo(axiosInstance, session),
+                handleAutoTapper(
+                    axiosInstance,
+                    session,
+                    earnPerTap,
+                    availableTaps
+                ),
             ]);
             break;
         default:
