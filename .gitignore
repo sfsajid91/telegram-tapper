@@ -11,3 +11,6 @@ dist
 
 # sessions directory
 sessions
+
+# logs directory
+logs
