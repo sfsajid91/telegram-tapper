@@ -86,7 +86,7 @@ export const sendTaps = async (
     taps: number
 ) => {
     const response = await httpClient.post(
-        'https://api.hamsterkombat.io/clicker/send-taps',
+        'https://api.hamsterkombat.io/clicker/tap',
         {
             availableTaps,
             count: taps,
