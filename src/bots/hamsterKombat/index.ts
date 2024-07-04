@@ -7,8 +7,9 @@ import { select, Separator } from '@inquirer/prompts';
 import axios from 'axios';
 import chalk from 'chalk';
 
-import { fileLogger } from '@/utils/fileLogger';
+import { handleAxiosError } from '@/utils/utils';
 import {
+    handleAutoTapper,
     handleDailyCipher,
     handleDailyCombo,
     handleDailyReward,
@@ -43,6 +44,8 @@ const startHamsterAction = async (session: Session, action: Action) => {
 
     const lastPassiveEarnings = profileData['lastPassiveEarn'];
     const earnPerHour = profileData['earnPassivePerHour'];
+    const earnPerTap = Number(profileData['earnPerTap']);
+    const availableTaps = profileData['availableTaps'];
 
     logger.info(
         `${session.name} - Last Passive Earnings: ${lastPassiveEarnings} - Earn Per Hour: ${earnPerHour}`
@@ -56,7 +59,12 @@ const startHamsterAction = async (session: Session, action: Action) => {
             await handleDailyReward(axiosInstance, session);
             break;
         case 'autoTapper':
-            logger.info('Starting Auto Tapper...');
+            await handleAutoTapper(
+                axiosInstance,
+                session,
+                earnPerTap,
+                availableTaps
+            );
             break;
         case 'dailyCombo':
             await handleDailyCombo(axiosInstance, session);
@@ -143,6 +151,6 @@ export const hamsterKombatBot = async () => {
         if (error instanceof Error) {
             logger.error(error.message);
         }
-        fileLogger.error(error);
+        handleAxiosError(error);
     }
 };

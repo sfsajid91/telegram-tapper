@@ -3,6 +3,7 @@ import { Card } from '@/types';
 import { logger } from '@/utils/logger';
 import { handleAxiosError } from '@/utils/utils';
 import { AxiosInstance } from 'axios';
+import { randomInt } from 'node:crypto';
 import {
     buyUpgrade,
     claimDailyCipher,
@@ -13,6 +14,7 @@ import {
     getProfileData,
     getTasks,
     getUpgrades,
+    sendTaps,
 } from '../api/scripts';
 import { decodeCipher } from '../utils/scripts';
 
@@ -153,5 +155,27 @@ export const handleDailyCombo = async (
             logger.error(error.message, 'handleDailyCombo');
         }
         handleAxiosError(error);
+    }
+};
+
+export const handleAutoTapper = async (
+    httpClient: AxiosInstance,
+    session: Session,
+    earnPerTap: number,
+    availableTaps: number
+) => {
+    const maxTap = Math.ceil(availableTaps / earnPerTap);
+    console.log('maxTap', maxTap);
+
+    const randomTaps = randomInt(10, maxTap);
+    const claimedEnergy = randomTaps * earnPerTap;
+
+    const remainingEnergy = availableTaps - claimedEnergy;
+
+    const status = await sendTaps(httpClient, remainingEnergy, randomTaps);
+    if (status) {
+        logger.info(
+            `${session.name} - Taps sent: ${randomTaps} - Energy claimed: ${claimedEnergy} - Remaining taps: ${remainingEnergy}`
+        );
     }
 };
