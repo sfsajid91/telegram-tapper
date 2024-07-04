@@ -1,4 +1,5 @@
 import { sessionPath } from '@/constants';
+import { fileLogger } from '@/utils/fileLogger';
 import fs from 'node:fs/promises';
 
 export type Session = {
@@ -13,6 +14,7 @@ export const getSessions: () => Promise<Session[]> = async () => {
         const sessionFile = await fs.readFile(sessionPath, 'utf-8');
         return JSON.parse(sessionFile);
     } catch (error) {
+        fileLogger.error(error);
         return [];
     }
 };

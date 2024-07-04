@@ -4,10 +4,12 @@
     "description": "A simple fun project that automates telegram tapping games",
     "main": "index.js",
     "scripts": {
-        "build": "swc src -d dist -D --strip-leading-paths --delete-dir-on-start",
-        "start": "node dist/index.js",
+        "build": "tsc && pnpm lint && swc src -d dist -D --strip-leading-paths --delete-dir-on-start",
+        "start": "NODE_ENV=production node dist/index.js",
         "dev:watch": "nodemon",
-        "dev": "node -r @swc-node/register src/index.ts"
+        "dev": "node -r @swc-node/register src/index.ts",
+        "lint": "eslint --ext .ts src",
+        "lint:fix": "eslint --ext .ts src --fix"
     },
     "keywords": [
         "telegram",
@@ -34,11 +36,12 @@
         "typescript": "^5.5.3"
     },
     "dependencies": {
+        "@inquirer/prompts": "^5.1.0",
         "axios": "^1.7.2",
         "chalk": "^4.1.2",
         "dotenv": "^16.4.5",
         "figlet": "^1.7.0",
-        "inquirer": "^8.2.6",
-        "telegram": "^2.22.2"
+        "telegram": "^2.22.2",
+        "winston": "^3.13.0"
     }
 }

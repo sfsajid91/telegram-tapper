@@ -1,39 +1,38 @@
-import { hamsterBot } from '@/constants';
+import { hamsterBot, version } from '@/constants';
 import { createSession } from '@/telegram/telegram';
 import { getSessions } from '@/telegram/utils/sessions';
 import { logger } from '@/utils/logger';
+import { select } from '@inquirer/prompts';
 import chalk from 'chalk';
 import figlet from 'figlet';
-import inquirer from 'inquirer';
+import { hamsterKombatBot } from './bots/hamsterKombat';
 
 const startBot = async () => {
-    const { botName } = await inquirer.prompt([
-        {
-            type: 'list',
-            name: 'botName',
-            message: 'Choose the bot:',
-            choices: [
-                {
-                    name: 'Hamster Kombat',
-                    value: hamsterBot,
-                },
-            ],
-        },
-    ]);
+    const botName = await select({
+        message: 'Choose the bot:',
+        choices: [
+            {
+                name: 'Hamster Kombat',
+                value: hamsterBot,
+                description: 'Automate Hamster Kombat game',
+            },
+        ],
+    });
 
     logger.info(`Starting ${botName}...`);
     if (botName === hamsterBot) {
-        // await hamsterKombat();
+        await hamsterKombatBot();
     }
 };
 
-//@ts-expect-error - This is a valid import
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+//@ts-ignore
 const mainFunc = async () => {
     // Clears the terminal screen.
     process.stdout.write('\u001B[2J\u001B[0;0f');
 
     console.log(chalk.red(figlet.textSync('Telegram Tapper')));
-    console.log(chalk.yellow('Version: 1.0.0'));
+    console.log(chalk.yellow(`Version: ${version}`));
     console.log(chalk.yellow('Author: @sfsajid91'));
     console.log(chalk.yellow('GitHub: https://github.com/sfsajid91'));
     console.log(chalk.yellow('='.repeat(process.stdout.columns)));
@@ -55,27 +54,25 @@ const mainFunc = async () => {
 
     console.log(chalk.green(`Total Sessions: ${totalSessions}`));
 
-    const { action } = await inquirer.prompt([
-        {
-            type: 'list',
-            name: 'action',
-            message: 'What do you want to do?',
-            choices: [
-                {
-                    name: 'Add a new session',
-                    value: 'addSession',
-                },
-                {
-                    name: 'Start Bot',
-                    value: 'startBot',
-                },
-                {
-                    name: 'Exit',
-                    value: 'exit',
-                },
-            ],
-        },
-    ]);
+    const action = await select({
+        message: 'What do you want to do?',
+        choices: [
+            {
+                name: 'Add a new session',
+                value: 'addSession',
+                description: 'Add a new session to the list',
+            },
+            {
+                name: 'Start Bot',
+                value: 'startBot',
+                description: 'Start Automating the bot',
+            },
+            {
+                name: 'Exit',
+                value: 'exit',
+            },
+        ],
+    });
 
     switch (action) {
         case 'addSession':
