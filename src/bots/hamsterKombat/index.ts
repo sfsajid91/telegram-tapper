@@ -7,7 +7,7 @@ import { select, Separator } from '@inquirer/prompts';
 import axios from 'axios';
 import chalk from 'chalk';
 
-import { handleAxiosError } from '@/utils/utils';
+import { delay, handleAxiosError } from '@/utils/utils';
 import {
     handleAutoTapper,
     handleDailyCipher,
@@ -145,6 +145,10 @@ export const hamsterKombatBot = async () => {
                 await startHamsterAction(s, action);
                 logger.success(`Finished @${s.username}'s Session`);
                 console.log(chalk.yellow('='.repeat(process.stdout.columns)));
+                await delay(10 * 1000);
+                logger.info(
+                    'Waiting 10 seconds before starting the next session...'
+                );
                 console.log('\n');
             }
         } else {

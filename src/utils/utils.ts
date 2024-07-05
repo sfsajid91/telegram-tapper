@@ -36,3 +36,6 @@ export const handleAxiosError = (error: unknown) => {
         fileLogger.error(error);
     }
 };
+
+export const delay = (ms: number) =>
+    new Promise((resolve) => setTimeout(resolve, ms));
