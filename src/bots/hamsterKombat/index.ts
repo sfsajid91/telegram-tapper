@@ -145,10 +145,10 @@ export const hamsterKombatBot = async () => {
                 await startHamsterAction(s, action);
                 logger.success(`Finished @${s.username}'s Session`);
                 console.log(chalk.yellow('='.repeat(process.stdout.columns)));
-                await delay(10 * 1000);
                 logger.info(
                     'Waiting 10 seconds before starting the next session...'
                 );
+                await delay(10 * 1000);
                 console.log('\n');
             }
         } else {

@@ -167,7 +167,7 @@ export const handleAutoTapper = async (
     const maxTap = Math.ceil(availableTaps / earnPerTap);
     console.log('maxTap', maxTap);
 
-    const randomTaps = randomInt(10, maxTap);
+    const randomTaps = randomInt(maxTap / 2, maxTap); // Random taps between half and max taps
     const claimedEnergy = randomTaps * earnPerTap;
 
     const remainingEnergy = availableTaps - claimedEnergy;
