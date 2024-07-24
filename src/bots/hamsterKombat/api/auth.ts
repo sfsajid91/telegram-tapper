@@ -13,7 +13,7 @@ export const login = async (tgWebUrl: string) => {
         };
 
         const response = await axios.post(
-            'https://api.hamsterkombat.io/auth/auth-by-telegram-webapp',
+            'https://api.hamsterkombatgame.io/auth/auth-by-telegram-webapp',
             data
         );
 

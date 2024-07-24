@@ -1,7 +1,7 @@
 import type { Session } from '@/telegram/utils/sessions';
 import { Card } from '@/types';
 import { logger } from '@/utils/logger';
-import { handleAxiosError } from '@/utils/utils';
+import { delay, handleAxiosError } from '@/utils/utils';
 import { AxiosInstance } from 'axios';
 import { randomInt } from 'node:crypto';
 import {
@@ -90,20 +90,50 @@ const buyCard = async (httpClient: AxiosInstance, cardId: string) => {
     }
 
     if (!isAvailable) {
-        if (cardToBuy.condition._type === 'ByUpgrade') {
-            const { upgradeId } = cardToBuy.condition;
-            const upgrade = cards.find((upgrade) => upgrade.id === upgradeId);
-            if (!upgrade) {
-                throw new Error('Upgrade not found');
-            }
+        if (!cardToBuy.condition) {
+            throw new Error('Card not available');
+        }
+        switch (cardToBuy.condition._type) {
+            case 'ByUpgrade': {
+                const { upgradeId } = cardToBuy.condition;
+                const upgrade = cards.find(
+                    (upgrade) => upgrade.id === upgradeId
+                );
+                if (!upgrade) {
+                    throw new Error('Upgrade not found');
+                }
 
-            const { level: levelToUpgrade } = cardToBuy.condition;
-            const level = upgrade.level;
-            for (let i = level - 1; i < levelToUpgrade; i++) {
-                await buyCard(httpClient, upgradeId);
+                const { level: levelToUpgrade } = cardToBuy.condition;
+                const level = upgrade.level;
+                for (let i = level - 1; i < levelToUpgrade; i++) {
+                    await buyCard(httpClient, upgradeId);
+                }
+                break;
             }
+            case 'ReferralCount':
+                throw new Error(
+                    `Total ${cardToBuy.condition.referralCount} referrals needed to buy card ${cardToBuy.name}`
+                );
+            case 'MoreReferralsCount':
+                throw new Error(
+                    `More ${cardToBuy.condition.moreReferralsCount} referrals needed to buy card ${cardToBuy.name}`
+                );
+            default:
+                throw new Error('Invalid card condition type');
+        }
+    }
+
+    if (cardToBuy.cooldownSeconds && cardToBuy.cooldownSeconds > 0) {
+        if (cardToBuy.cooldownSeconds > 120) {
+            throw new Error('Card cooldown is more than 120 seconds');
         } else {
-            throw new Error(`Card is not available: ${cardId}`);
+            logger.info(
+                `Card on cooldown: ${cardToBuy.name} - Cooldown: ${cardToBuy.cooldownSeconds} seconds`
+            );
+
+            logger.info('Waiting for cooldown to end');
+
+            await delay(cardToBuy.cooldownSeconds * 1000);
         }
     }
 
@@ -114,6 +144,9 @@ const buyCard = async (httpClient: AxiosInstance, cardId: string) => {
             `Card bought: ${cardToBuy.name} - Price: ${price} - Level: ${level} - Balance: ${(balance - price).toFixed(2)}`
         );
     }
+
+    logger.info('Waiting 5 second before buying next card');
+    await delay(5000);
 };
 
 export const handleDailyCombo = async (
@@ -165,9 +198,8 @@ export const handleAutoTapper = async (
     availableTaps: number
 ) => {
     const maxTap = Math.ceil(availableTaps / earnPerTap);
-    console.log('maxTap', maxTap);
 
-    const randomTaps = randomInt(maxTap / 2, maxTap); // Random taps between half and max taps
+    const randomTaps = randomInt(Math.ceil(maxTap / 2), maxTap); // Random taps between half and max taps
     const claimedEnergy = randomTaps * earnPerTap;
 
     const remainingEnergy = availableTaps - claimedEnergy;

@@ -3,7 +3,7 @@ import type { AxiosInstance } from 'axios';
 
 export const getMeTelegram = async (httpClient: AxiosInstance) => {
     const response = await httpClient.post(
-        'https://api.hamsterkombat.io/auth/me-telegram',
+        'https://api.hamsterkombatgame.io/auth/me-telegram',
         {}
     );
     return response.data;
@@ -11,7 +11,7 @@ export const getMeTelegram = async (httpClient: AxiosInstance) => {
 
 export const getConfig = async (httpClient: AxiosInstance) => {
     const profile = await httpClient.post(
-        'https://api.hamsterkombat.io/clicker/config',
+        'https://api.hamsterkombatgame.io/clicker/config',
         {}
     );
     return profile.data;
@@ -19,7 +19,7 @@ export const getConfig = async (httpClient: AxiosInstance) => {
 
 export const getProfileData = async (httpClient: AxiosInstance) => {
     const profile = await httpClient.post(
-        'https://api.hamsterkombat.io/clicker/sync',
+        'https://api.hamsterkombatgame.io/clicker/sync',
         {}
     );
     const profileData = profile.data['clickerUser'] || {};
@@ -28,7 +28,7 @@ export const getProfileData = async (httpClient: AxiosInstance) => {
 
 export const getTasks = async (httpClient: AxiosInstance) => {
     const tasks = await httpClient.post(
-        'https://api.hamsterkombat.io/clicker/list-tasks',
+        'https://api.hamsterkombatgame.io/clicker/list-tasks',
         {}
     );
     return tasks.data.tasks;
@@ -36,7 +36,7 @@ export const getTasks = async (httpClient: AxiosInstance) => {
 
 export const claimDailyReward = async (httpClient: AxiosInstance) => {
     const response = await httpClient.post(
-        'https://api.hamsterkombat.io/clicker/check-task',
+        'https://api.hamsterkombatgame.io/clicker/check-task',
         { taskId: 'streak_days' }
     );
     return response.data;
@@ -44,7 +44,7 @@ export const claimDailyReward = async (httpClient: AxiosInstance) => {
 
 export const getUpgrades = async (httpClient: AxiosInstance) => {
     const upgrades = await httpClient.post(
-        'https://api.hamsterkombat.io/clicker/upgrades-for-buy',
+        'https://api.hamsterkombatgame.io/clicker/upgrades-for-buy',
         {}
     );
     return upgrades.data;
@@ -55,7 +55,7 @@ export const buyUpgrade = async (
     upgradeId: string
 ) => {
     const response = await httpClient.post(
-        'https://api.hamsterkombat.io/clicker/buy-upgrade',
+        'https://api.hamsterkombatgame.io/clicker/buy-upgrade',
         { timestamp: Date.now(), upgradeId }
     );
     return response.data['clickerUser']['upgrades'];
@@ -63,7 +63,7 @@ export const buyUpgrade = async (
 
 export const getBoosts = async (httpClient: AxiosInstance) => {
     const boosts = await httpClient.post(
-        'https://api.hamsterkombat.io/clicker/boosts-for-buy',
+        'https://api.hamsterkombatgame.io/clicker/boosts-for-buy',
         {}
     );
     return boosts.data;
@@ -74,7 +74,7 @@ export const claimDailyCipher = async (
     cipher: string
 ) => {
     const response = await httpClient.post(
-        'https://api.hamsterkombat.io/clicker/claim-daily-cipher',
+        'https://api.hamsterkombatgame.io/clicker/claim-daily-cipher',
         { cipher }
     );
     return response.data;
@@ -86,7 +86,7 @@ export const sendTaps = async (
     taps: number
 ) => {
     const response = await httpClient.post(
-        'https://api.hamsterkombat.io/clicker/tap',
+        'https://api.hamsterkombatgame.io/clicker/tap',
         {
             availableTaps,
             count: taps,
@@ -101,13 +101,15 @@ export const applyBoost = async (
     boostId: number
 ) => {
     const response = await httpClient.post(
-        'https://api.hamsterkombat.io/clicker/apply-boost',
+        'https://api.hamsterkombatgame.io/clicker/apply-boost',
         { boostId, timestamp: Date.now() }
     );
     return response.data;
 };
 
-export const getComboCards = async (httpClient: AxiosInstance) => {
+export const getComboCards = async (
+    httpClient: AxiosInstance
+): Promise<string[]> => {
     const response = await httpClient.get(
         'https://nabikaz.github.io/HamsterKombat-API/config.json',
         {}
@@ -117,14 +119,14 @@ export const getComboCards = async (httpClient: AxiosInstance) => {
     const currentDate = new Date();
     const isValidCombo = isDifferenceLessThanOneDay(comboDate, currentDate);
     if (isValidCombo) {
-        return response.data.dailyCards as string[];
+        return response.data.dailyCards || [];
     }
     return [];
 };
 
 export const claimDailyCombo = async (httpClient: AxiosInstance) => {
     const response = await httpClient.post(
-        'https://api.hamsterkombat.io/clicker/claim-daily-combo',
+        'https://api.hamsterkombatgame.io/clicker/claim-daily-combo',
         {}
     );
     return Boolean(response.data);
