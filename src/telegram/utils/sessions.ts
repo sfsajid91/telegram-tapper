@@ -6,6 +6,7 @@ export type Session = {
     name: string;
     session: string;
     username: string;
+    proxy?: string;
 };
 
 export const getSessions: () => Promise<Session[]> = async () => {
@@ -19,12 +20,12 @@ export const getSessions: () => Promise<Session[]> = async () => {
     }
 };
 
-export const getSessionString = async (name: string, username: string) => {
+export const getSession = async (name: string, username: string) => {
     const sessions = await getSessions();
     const session = sessions.find(
         (session) => session.name === name && session.username === username
     );
-    return session?.session ?? '';
+    return session;
 };
 
 export const addSession = async (

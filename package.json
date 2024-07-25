@@ -41,6 +41,7 @@
         "chalk": "^4.1.2",
         "dotenv": "^16.4.5",
         "figlet": "^1.7.0",
+        "https-proxy-agent": "^7.0.5",
         "telegram": "^2.22.2",
         "winston": "^3.13.0"
     }

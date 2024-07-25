@@ -4,10 +4,11 @@ import type { Session } from '@/telegram/utils/sessions';
 import { getSessions } from '@/telegram/utils/sessions';
 import { logger } from '@/utils/logger';
 import { select, Separator } from '@inquirer/prompts';
-import axios from 'axios';
+import axios, { type AxiosRequestConfig } from 'axios';
 import chalk from 'chalk';
 
 import { delay, handleAxiosError } from '@/utils/utils';
+import { HttpsProxyAgent } from 'https-proxy-agent';
 import {
     handleAutoTapper,
     handleDailyCipher,
@@ -15,7 +16,7 @@ import {
     handleDailyReward,
 } from './actions';
 import { login } from './api/auth';
-import { getProfileData } from './api/scripts';
+import { getIpInfo, getProfileData } from './api/scripts';
 
 type Action =
     | 'solveCieper'
@@ -26,23 +27,41 @@ type Action =
 
 const startHamsterAction = async (session: Session, action: Action) => {
     const tgWebUrl = await getTgUrl(session.name, session.username, hamsterBot);
-    const response = await login(tgWebUrl);
+
+    const response = await login(tgWebUrl, session.proxy);
 
     if (!response.authToken) {
         throw new Error('Failed to login');
     }
 
-    const headers = {
-        Authorization: `Bearer ${response.authToken}`,
+    const requestOptions: AxiosRequestConfig = {
+        headers: { Authorization: `Bearer ${response.authToken}` },
     };
 
-    const axiosInstance = axios.create({
-        headers,
-    });
+    if (session.proxy) {
+        const agent = new HttpsProxyAgent(session.proxy);
+        requestOptions['httpsAgent'] = agent;
+        requestOptions['httpAgent'] = agent;
+    }
+
+    const axiosInstance = axios.create(requestOptions);
 
     const profileData = await getProfileData(axiosInstance);
 
-    const lastPassiveEarnings = profileData['lastPassiveEarn'];
+    const ipInfo = await getIpInfo(axiosInstance);
+
+    const ip = chalk.cyan(ipInfo['ip'] || 'Unknown');
+    const country = chalk.bold(chalk.cyan(ipInfo['country_code'] || 'Unknown'));
+    const city = chalk.bold(chalk.cyan(ipInfo['city_name'] || 'Unknown'));
+    const asnOrg = chalk.bold(chalk.cyan(ipInfo['asn_org'] || 'Unknown'));
+
+    logger.info(
+        `${session.name} - IP: ${ip} - Country: ${country} - City: ${city} - Network Provider: ${asnOrg}`
+    );
+
+    const lastPassiveEarnings = Number(profileData['lastPassiveEarn']).toFixed(
+        2
+    );
     const earnPerHour = profileData['earnPassivePerHour'];
     const earnPerTap = Number(profileData['earnPerTap']);
     const availableTaps = profileData['availableTaps'];
@@ -70,7 +89,7 @@ const startHamsterAction = async (session: Session, action: Action) => {
             await handleDailyCombo(axiosInstance, session);
             break;
         case 'allInOne':
-            await Promise.all([
+            await Promise.allSettled([
                 handleDailyCipher(axiosInstance, session),
                 handleDailyReward(axiosInstance, session),
                 handleDailyCombo(axiosInstance, session),
@@ -144,9 +163,12 @@ export const hamsterKombatBot = async () => {
             for (const s of sessions) {
                 await startHamsterAction(s, action);
                 logger.success(`Finished @${s.username}'s Session`);
-                console.log(chalk.yellow('='.repeat(process.stdout.columns)));
+
                 // delay if there are a session left
                 if (s !== sessions[sessions.length - 1]) {
+                    console.log(
+                        chalk.yellow('='.repeat(process.stdout.columns))
+                    );
                     logger.info(
                         'Waiting 10 seconds before starting the next session...'
                     );

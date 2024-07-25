@@ -1,9 +1,12 @@
-import { addSession, getSessionString } from '@/telegram/utils/sessions';
+import proxyFile from '@/../proxy.json';
+import { addSession, getSession } from '@/telegram/utils/sessions';
+import { extractProxyDetails } from '@/utils/extractProxy';
 import { getBotUrl } from '@/utils/getBotUrl';
 import { logger } from '@/utils/logger';
 import dotenv from 'dotenv';
 import readline from 'node:readline/promises';
 import { Api, TelegramClient } from 'telegram';
+import type { TelegramClientParams } from 'telegram/client/telegramBaseClient';
 import { StringSession } from 'telegram/sessions';
 
 dotenv.config();
@@ -31,9 +34,29 @@ export const createSession = async () => {
 
     logger.info('Creating a new session...');
 
-    const client = new TelegramClient(stringSession, apiId, apiHash, {
+    const clientOptions: TelegramClientParams = {
         connectionRetries: 5,
-    });
+    };
+
+    const proxy = extractProxyDetails(proxyFile.proxy);
+
+    if (proxy && proxy.isSocks) {
+        clientOptions.proxy = {
+            ip: proxy.ip,
+            port: proxy.port,
+            username: proxy.username,
+            password: proxy.password,
+            MTProxy: false,
+            socksType: proxy.socksVersion,
+        };
+    }
+
+    const client = new TelegramClient(
+        stringSession,
+        apiId,
+        apiHash,
+        clientOptions
+    );
 
     // @ts-expect-error - We are disabling the log level.
     client.setLogLevel('none');
@@ -67,20 +90,37 @@ export const getTgUrl = async (
         output: process.stdout,
     });
 
-    const session = await getSessionString(sessionName, username);
+    const session = await getSession(sessionName, username);
 
     if (!session) {
         logger.error('Session not found.');
         process.exit(1);
     }
 
+    const clientOptions: TelegramClientParams = {
+        connectionRetries: 5,
+    };
+
+    if (session.proxy) {
+        const proxy = extractProxyDetails(session.proxy);
+
+        if (proxy && proxy.isSocks) {
+            clientOptions.proxy = {
+                ip: proxy.ip,
+                port: proxy.port,
+                username: proxy.username,
+                password: proxy.password,
+                MTProxy: false,
+                socksType: proxy.socksVersion,
+            };
+        }
+    }
+
     const client = new TelegramClient(
-        new StringSession(session),
+        new StringSession(session.session),
         apiId,
         apiHash,
-        {
-            connectionRetries: 5,
-        }
+        clientOptions
     );
     // @ts-expect-error - We are disabling the log level.
     client.setLogLevel('none');

@@ -28,6 +28,28 @@ To use Telegram Tapper, follow these steps:
 2. Start the application: `pnpm start`
 3. Follow the instructions to authenticate your Telegram account.
 
+## Proxies
+
+For initial login and authentication, Telegram Tapper uses a proxy server to bypass Telegram's restrictions. If you encounter any issues, you can try using a different proxy server by updating the `proxy` value in the `proxy.json` file.
+
+Suggested proxy protocol is `socks5`.
+
+You can also use proxies for individual sessions by editing the `proxy` value in the `sessions/session.json` file.
+
+```json
+[
+    {
+        "name": "session",
+        "session": "...",
+        "username": "...",
+        "proxy": "socks5://username:password@172.0.0.1:6712"
+    },
+    { "...": {} }
+]
+```
+
+Some free proxy servers can be found at: [https://free-proxy-list.net/](https://free-proxy-list.net/), [https://www.proxyscan.io/](https://www.proxyscan.io/) or [https://www.proxy-list.download/](https://www.proxy-list.download/)
+
 ## Features
 
 -   Send messages to Telegram users or groups

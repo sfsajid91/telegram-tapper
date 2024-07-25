@@ -131,3 +131,10 @@ export const claimDailyCombo = async (httpClient: AxiosInstance) => {
     );
     return Boolean(response.data);
 };
+
+export const getIpInfo = async (httpClient: AxiosInstance) => {
+    const response = await httpClient.get(
+        'https://api.hamsterkombatgame.io/ip'
+    );
+    return response.data;
+};
