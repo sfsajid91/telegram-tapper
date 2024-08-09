@@ -3,13 +3,14 @@ import { getTgUrl } from '@/telegram/telegram';
 import type { Session } from '@/telegram/utils/sessions';
 import { getSessions } from '@/telegram/utils/sessions';
 import { logger } from '@/utils/logger';
-import { select, Separator } from '@inquirer/prompts';
-import axios, { type AxiosRequestConfig } from 'axios';
+import { number, select, Separator } from '@inquirer/prompts';
+import axios, { AxiosInstance, type AxiosRequestConfig } from 'axios';
 import chalk from 'chalk';
 
 import { delay, handleAxiosError } from '@/utils/utils';
 import { HttpsProxyAgent } from 'https-proxy-agent';
 import {
+    buyBestUpgrades,
     handleAutoTapper,
     handleDailyCipher,
     handleDailyCombo,
@@ -23,7 +24,29 @@ type Action =
     | 'dailyReward'
     | 'autoTapper'
     | 'allInOne'
-    | 'dailyCombo';
+    | 'dailyCombo'
+    | 'buyBestUpgrades';
+
+const handleBuyBestUpgrades = async (
+    axiosInstance: AxiosInstance,
+    session: Session
+) => {
+    const profitPercentage = await number({
+        message: 'Enter the profit percentage(%):',
+        min: 1,
+        max: 100,
+        default: 10,
+        required: true,
+        validate: (value) => {
+            if (value && (value < 1 || value > 100)) {
+                return 'The value must be between 1 and 100';
+            }
+            return true;
+        },
+    });
+
+    await buyBestUpgrades(axiosInstance, session, profitPercentage);
+};
 
 const startHamsterAction = async (session: Session, action: Action) => {
     const tgWebUrl = await getTgUrl(session.name, session.username, hamsterBot);
@@ -56,7 +79,7 @@ const startHamsterAction = async (session: Session, action: Action) => {
     const asnOrg = chalk.bold(chalk.cyan(ipInfo['asn_org'] || 'Unknown'));
 
     logger.info(
-        `${session.name} - IP: ${ip} - Country: ${country} - City: ${city} - Network Provider: ${asnOrg}`
+        `${chalk.bold.cyan('@' + session.username)} - IP: ${ip} - Country: ${country} - City: ${city} - Network Provider: ${asnOrg}`
     );
 
     const lastPassiveEarnings = Number(profileData['lastPassiveEarn']).toFixed(
@@ -67,7 +90,7 @@ const startHamsterAction = async (session: Session, action: Action) => {
     const availableTaps = profileData['availableTaps'];
 
     logger.info(
-        `${session.name} - Last Passive Earnings: ${lastPassiveEarnings} - Earn Per Hour: ${earnPerHour}`
+        `${chalk.bold.cyan('@' + session.username)} - Last Passive Earnings: ${chalk.bold.cyan(lastPassiveEarnings)} - Earn Per Hour: ${chalk.bold.cyan(earnPerHour)}`
     );
 
     switch (action) {
@@ -101,6 +124,11 @@ const startHamsterAction = async (session: Session, action: Action) => {
                 ),
             ]);
             break;
+
+        case 'buyBestUpgrades':
+            await handleBuyBestUpgrades(axiosInstance, session);
+            break;
+
         default:
             logger.info('Exiting...');
             break;
@@ -139,6 +167,12 @@ export const hamsterKombatBot = async () => {
                     value: 'allInOne',
                     description: 'Run all the actions',
                 },
+                new Separator(),
+                {
+                    name: 'Buy Best Upgrades',
+                    value: 'buyBestUpgrades',
+                    description: 'Buy the best upgrades',
+                },
             ],
         });
 
@@ -162,7 +196,9 @@ export const hamsterKombatBot = async () => {
         if (session === 'all') {
             for (const s of sessions) {
                 await startHamsterAction(s, action);
-                logger.success(`Finished @${s.username}'s Session`);
+                logger.success(
+                    `Finished ${chalk.bold.cyan('@' + s.username)}'s Session`
+                );
 
                 // delay if there are a session left
                 if (s !== sessions[sessions.length - 1]) {

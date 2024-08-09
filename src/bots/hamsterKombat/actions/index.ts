@@ -3,6 +3,7 @@ import { Card } from '@/types';
 import { logger } from '@/utils/logger';
 import { delay, handleAxiosError } from '@/utils/utils';
 import { AxiosInstance } from 'axios';
+import chalk from 'chalk';
 import { randomInt } from 'node:crypto';
 import {
     buyUpgrade,
@@ -24,22 +25,24 @@ export const handleDailyReward = async (
 ) => {
     const tasks = await getTasks(httpClient);
     const dailyTask = tasks[tasks.length - 1];
-    const reward = dailyTask['rewardCoins'];
+    const reward = chalk.bold.cyan(dailyTask['rewardCoins']);
     const isCompleted = dailyTask['isCompleted'];
-    const days = dailyTask['days'];
+    const days = chalk.bold.cyan(dailyTask['days']);
 
     if (!isCompleted) {
         logger.info('Completing Daily Task...');
         const status = await claimDailyReward(httpClient);
         if (status) {
             logger.info(
-                `${session.name} - Completed Daily Task - Reward: ${reward} - Days: ${days}`
+                `${chalk.bold.cyan('@' + session.username)} - Completed Daily Task - Reward: ${reward} - Days: ${days}`
             );
         }
     }
 
     if (isCompleted) {
-        logger.info(`${session.name} - Daily Task already completed`);
+        logger.info(
+            `${chalk.bold.cyan('@' + session.username)} - Daily Task already completed`
+        );
     }
 };
 
@@ -53,7 +56,7 @@ export const handleDailyCipher = async (
     if (dailyCipher) {
         const cipher = dailyCipher['cipher'];
         const isClaimed = dailyCipher['isClaimed'];
-        const bonus = dailyCipher['bonusCoins'];
+        const bonus = chalk.bold.cyan(dailyCipher['bonusCoins']);
 
         if (!isClaimed) {
             logger.info('Claiming Daily Cipher...');
@@ -62,13 +65,15 @@ export const handleDailyCipher = async (
 
             if (status) {
                 logger.info(
-                    `${session.name} - Claimed Daily Cipher - Bonus: ${bonus}`
+                    `${chalk.bold.cyan('@' + session.username)} - Claimed Daily Cipher - Bonus: ${bonus}`
                 );
             }
         }
 
         if (isClaimed) {
-            logger.info(`${session.name} - Daily Cipher already claimed`);
+            logger.info(
+                `${chalk.bold.cyan('@' + session.username)} - Daily Cipher already claimed`
+            );
         }
     }
 };
@@ -128,7 +133,7 @@ const buyCard = async (httpClient: AxiosInstance, cardId: string) => {
             throw new Error('Card cooldown is more than 120 seconds');
         } else {
             logger.info(
-                `Card on cooldown: ${cardToBuy.name} - Cooldown: ${cardToBuy.cooldownSeconds} seconds`
+                `Card on cooldown: ${chalk.bold.cyan(cardToBuy.name)} - Cooldown: ${cardToBuy.cooldownSeconds} seconds`
             );
 
             logger.info('Waiting for cooldown to end');
@@ -141,12 +146,14 @@ const buyCard = async (httpClient: AxiosInstance, cardId: string) => {
     if (res) {
         const level = res[cardId]['level'];
         logger.info(
-            `Card bought: ${cardToBuy.name} - Price: ${price} - Level: ${level} - Balance: ${(balance - price).toFixed(2)}`
+            `Card bought: ${chalk.bold.cyan(cardToBuy.name)} - Price: ${chalk.bold.cyan(price)} - Level: ${chalk.bold.cyan(level)} - Balance: ${chalk.bold.cyan((balance - price).toFixed(2))}`
         );
     }
 
-    logger.info('Waiting 5 second before buying next card');
-    await delay(5000);
+    const randSleep = randomInt(5, 15);
+
+    logger.info(`Waiting ${randSleep} second before buying next card`);
+    await delay(randSleep * 1000);
 };
 
 export const handleDailyCombo = async (
@@ -160,14 +167,18 @@ export const handleDailyCombo = async (
         const isClaimed = dailyCombo['isClaimed'];
 
         if (isClaimed) {
-            logger.info(`${session.name} - Daily Combo already claimed`);
+            logger.info(
+                `${chalk.bold.cyan(session.username)} - Daily Combo already claimed`
+            );
             return;
         }
         const boughtCards = dailyCombo['upgradeIds'] as string[];
         const comboCards = await getComboCards(httpClient);
 
         if (!comboCards.length) {
-            logger.error(`${session.name} - No combo cards found`);
+            logger.error(
+                `${chalk.bold.cyan(session.username)} - No combo cards found`
+            );
             return;
         }
         // filter the cards that are not bought
@@ -181,7 +192,9 @@ export const handleDailyCombo = async (
 
         const claimStatus = await claimDailyCombo(httpClient);
         if (claimStatus) {
-            logger.info(`${session.name} - Daily Combo claimed`);
+            logger.info(
+                `${chalk.bold.cyan(session.username)} - Daily Combo claimed`
+            );
         }
     } catch (error: unknown) {
         if (error instanceof Error) {
@@ -207,7 +220,80 @@ export const handleAutoTapper = async (
     const status = await sendTaps(httpClient, remainingEnergy, randomTaps);
     if (status) {
         logger.info(
-            `${session.name} - Taps sent: ${randomTaps} - Energy claimed: ${claimedEnergy} - Remaining taps: ${remainingEnergy}`
+            `${chalk.bold.cyan(session.username)} - Taps sent: ${randomTaps} - Energy claimed: ${claimedEnergy} - Remaining taps: ${remainingEnergy}`
         );
+    }
+};
+
+export const buyBestUpgrades = async (
+    httpClient: AxiosInstance,
+    session: Session,
+    profitPercentage: number = 10
+) => {
+    try {
+        const upgrades = await getUpgrades(httpClient);
+        const upgradesForBuy = upgrades['upgradesForBuy'] as Card[];
+
+        const filteredUpgrades = upgradesForBuy.filter((card) => {
+            if (!card.isAvailable || card.isExpired) {
+                return false;
+            }
+            if (card.cooldownSeconds && card.cooldownSeconds > 0) {
+                return false;
+            }
+
+            const isProfitable =
+                (card.profitPerHourDelta / card.price) * 100 >=
+                profitPercentage;
+
+            if (!isProfitable) {
+                return false;
+            }
+            return true;
+        });
+
+        if (filteredUpgrades.length === 0) {
+            logger.info('No profitable upgrades found');
+            return;
+        }
+
+        for (const [index, card] of filteredUpgrades.entries()) {
+            const res = await buyUpgrade(httpClient, card.id);
+
+            if (res) {
+                const level = chalk.cyan(res[card.id]['level']);
+                logger.info(
+                    `${chalk.bold.cyan('@' + session.username)} - Card bought: ${chalk.bold.cyan(card.name)} - Price: ${chalk.cyan(card.price)} - Level: ${level} - Profit: ${chalk.cyan(card.profitPerHourDelta)}`
+                );
+            }
+
+            const isLastCard = index === filteredUpgrades.length - 1;
+            if (!isLastCard) {
+                const randSleep = randomInt(5, 15);
+                logger.info(
+                    `Waiting ${randSleep} second before buying ${chalk.bold.cyan(filteredUpgrades[index + 1].name)}`
+                );
+                await delay(5000);
+            }
+
+            if (isLastCard) {
+                const randSleep = randomInt(8, 20);
+                logger.success(
+                    `Total ${chalk.bold.cyan(filteredUpgrades.length)} cards bought`
+                );
+                logger.info(
+                    chalk.cyan(
+                        `Waiting ${randSleep} second before next iteration`
+                    )
+                );
+                await delay(randSleep * 1000);
+                await buyBestUpgrades(httpClient, session, profitPercentage);
+            }
+        }
+    } catch (error: unknown) {
+        if (error instanceof Error) {
+            logger.error(error.message, 'buyBestUpgrades');
+        }
+        handleAxiosError(error);
     }
 };
