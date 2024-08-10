@@ -29,25 +29,57 @@ export const handleDailyReward = async (
     session: Session
 ) => {
     const tasks = await getTasks(httpClient);
-    const dailyTask = tasks[tasks.length - 1];
-    const reward = chalk.bold.cyan(dailyTask['rewardCoins']);
-    const isCompleted = dailyTask['isCompleted'];
-    const days = chalk.bold.cyan(dailyTask['days']);
 
-    if (!isCompleted) {
-        logger.info('Completing Daily Task...');
-        const status = await claimDailyReward(httpClient);
-        if (status) {
+    logger.info(
+        `${chalk.bold.cyan('@' + session.username)} - Completing Daily Rewards`
+    );
+
+    const filteredTasks = tasks.filter(
+        (task: { id: string }) =>
+            task['id'].startsWith('hamster_youtube') ||
+            task['id'].startsWith('streak_days')
+    );
+
+    for (const task of filteredTasks) {
+        const taskId = String(task['id']);
+        const rewardCoins = task['rewardCoins'];
+        const isCompleted = task['isCompleted'];
+
+        if (!isCompleted && rewardCoins > 0) {
             logger.info(
-                `${chalk.bold.cyan('@' + session.username)} - Completed Daily Task - Reward: ${reward} - Days: ${days}`
+                `${chalk.bold.cyan('@' + session.username)} - Waiting for 5 seconds before completing ${chalk.bold.cyan(taskId)} Task`
+            );
+            await delay(5000);
+
+            const { profileData, taskDetails } = await claimDailyReward(
+                httpClient,
+                taskId
+            );
+
+            if (taskDetails.isCompleted) {
+                const balanceCoins = parseInt(profileData['balanceCoins'], 10);
+
+                if (taskDetails['days']) {
+                    logger.success(
+                        `${chalk.bold.cyan('@' + session.username)} - Completed ${chalk.bold.cyan(taskId)} Task - Reward: ${chalk.bold.cyan(rewardCoins)} - Days: ${chalk.bold.cyan(taskDetails['days'])} - Balance: ${chalk.bold.cyan(balanceCoins)}`
+                    );
+                    return;
+                }
+
+                logger.success(
+                    `${chalk.bold.cyan('@' + session.username)} - Completed ${chalk.bold.cyan(taskId)} Task - Reward: ${chalk.bold.cyan(rewardCoins)} - Balance: ${chalk.bold.cyan(balanceCoins)}`
+                );
+            } else {
+                logger.info(
+                    `${chalk.bold.cyan('@' + session.username)} - Failed to complete ${chalk.bold.cyan(taskId)} Task`
+                );
+            }
+        }
+        if (isCompleted) {
+            logger.info(
+                `${chalk.bold.cyan('@' + session.username)} - ${chalk.bold.cyan(taskId)} Task already completed`
             );
         }
-    }
-
-    if (isCompleted) {
-        logger.info(
-            `${chalk.bold.cyan('@' + session.username)} - Daily Task already completed`
-        );
     }
 };
 

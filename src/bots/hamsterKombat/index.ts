@@ -168,9 +168,9 @@ export const hamsterKombatBot = async () => {
                 },
 
                 {
-                    name: 'Claim Daily Reward',
+                    name: 'Claim Daily Tasks',
                     value: 'dailyReward',
-                    description: 'Claim the daily reward',
+                    description: 'Claim the daily tasks',
                 },
                 {
                     name: 'Auto Tapper',

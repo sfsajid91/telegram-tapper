@@ -34,12 +34,17 @@ export const getTasks = async (httpClient: AxiosInstance) => {
     return tasks.data.tasks;
 };
 
-export const claimDailyReward = async (httpClient: AxiosInstance) => {
+export const claimDailyReward = async (
+    httpClient: AxiosInstance,
+    taskId: string
+) => {
     const response = await httpClient.post(
         'https://api.hamsterkombatgame.io/clicker/check-task',
-        { taskId: 'streak_days' }
+        { taskId }
     );
-    return response.data;
+    const taskDetails = response.data['task'];
+    const profileData = response.data['clickerUser'];
+    return { taskDetails, profileData };
 };
 
 export const getUpgrades = async (httpClient: AxiosInstance) => {
