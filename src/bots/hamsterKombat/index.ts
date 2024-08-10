@@ -127,6 +127,12 @@ const startHamsterAction = async (session: Session, action: Action) => {
             await Promise.allSettled([
                 handleDailyCipher(axiosInstance, session),
                 handleDailyReward(axiosInstance, session),
+                handleMiniGame(
+                    axiosInstance,
+                    session,
+                    profileData['id'],
+                    totalKeys
+                ),
                 handleDailyCombo(axiosInstance, session),
                 handleAutoTapper(
                     axiosInstance,
