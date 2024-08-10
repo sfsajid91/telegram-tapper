@@ -6,6 +6,11 @@ import { AxiosInstance } from 'axios';
 import chalk from 'chalk';
 import { randomInt } from 'node:crypto';
 import {
+    claimDailyMiniGame,
+    getMiniGameCipher,
+    startDailyMiniGame,
+} from '../api/miniGame';
+import {
     buyUpgrade,
     claimDailyCipher,
     claimDailyCombo,
@@ -293,6 +298,91 @@ export const buyBestUpgrades = async (
     } catch (error: unknown) {
         if (error instanceof Error) {
             logger.error(error.message, 'buyBestUpgrades');
+        }
+        handleAxiosError(error);
+    }
+};
+
+export const handleMiniGame = async (
+    httpClient: AxiosInstance,
+    session: Session,
+    userId: string,
+    claimedKeys: number
+) => {
+    try {
+        const gameConfig = await getConfig(httpClient);
+        const dailyMiniGame = gameConfig['dailyKeysMiniGame'];
+
+        if (!dailyMiniGame) {
+            logger.info(
+                `${chalk.bold.cyan(`@${session.username}`)} - Daily Mini Game not available`
+            );
+            return;
+        }
+
+        const isClaimed = dailyMiniGame['isClaimed'];
+        const secondsForNextAttempt =
+            dailyMiniGame['remainSecondsToNextAttempt'];
+        const startDate = dailyMiniGame['startDate'];
+
+        if (isClaimed) {
+            logger.info(
+                `${chalk.bold.cyan(`@${session.username}`)} - Daily Mini Game already claimed`
+            );
+            return;
+        }
+
+        if (secondsForNextAttempt > 0) {
+            logger.info(
+                `${chalk.bold.cyan(`@${session.username}`)} - Waiting for ${secondsForNextAttempt} seconds before attempting Mini Game`
+            );
+            return;
+        }
+
+        const gameSleepTime = randomInt(12, 26);
+        const encodedBody = await getMiniGameCipher(
+            httpClient,
+            userId,
+            startDate,
+            gameSleepTime
+        );
+
+        if (!encodedBody) {
+            return;
+        }
+
+        await startDailyMiniGame(httpClient);
+
+        logger.info(
+            `${chalk.bold.cyan(`@${session.username}`)} - Waiting for ${gameSleepTime} seconds before Mini Game`
+        );
+
+        await delay(gameSleepTime * 1000);
+
+        const { dailyMiniGame: miniGameResponse, profileData } =
+            await claimDailyMiniGame(httpClient, encodedBody);
+
+        if (!miniGameResponse) {
+            return;
+        }
+
+        const isClaimedAfterGame = miniGameResponse['isClaimed'];
+
+        if (isClaimedAfterGame) {
+            const newTotalKeys = profileData['totalKeys'];
+            const earnedKeys = newTotalKeys - claimedKeys;
+
+            logger.success(
+                `${chalk.bold.cyan(`@${session.username}`)} - Claimed Daily Mini Game - Earned: ${chalk.bold(
+                    chalk.cyan(
+                        `${claimedKeys} (${chalk.green(`+${earnedKeys}`)})`
+                    )
+                )} keys`
+            );
+        }
+    } catch (error: unknown) {
+        if (error instanceof Error) {
+            logger.error(error.message, 'handleMiniGame');
         }
         handleAxiosError(error);
     }

@@ -15,6 +15,7 @@ import {
     handleDailyCipher,
     handleDailyCombo,
     handleDailyReward,
+    handleMiniGame,
 } from './actions';
 import { login } from './api/auth';
 import { getIpInfo, getProfileData } from './api/scripts';
@@ -25,7 +26,8 @@ type Action =
     | 'autoTapper'
     | 'allInOne'
     | 'dailyCombo'
-    | 'buyBestUpgrades';
+    | 'buyBestUpgrades'
+    | 'dailyMiniGame';
 
 const handleBuyBestUpgrades = async (
     axiosInstance: AxiosInstance,
@@ -89,8 +91,10 @@ const startHamsterAction = async (session: Session, action: Action) => {
     const earnPerTap = Number(profileData['earnPerTap']);
     const availableTaps = profileData['availableTaps'];
 
+    const totalKeys = profileData['totalKeys'] || 0;
+
     logger.info(
-        `${chalk.bold.cyan('@' + session.username)} - Last Passive Earnings: ${chalk.bold.cyan(lastPassiveEarnings)} - Earn Per Hour: ${chalk.bold.cyan(earnPerHour)}`
+        `${chalk.bold.cyan('@' + session.username)} - Last Passive Earnings: ${chalk.bold.cyan(lastPassiveEarnings)} - Earn Per Hour: ${chalk.bold.cyan(earnPerHour)} - Total Keys: ${chalk.bold.cyan(totalKeys)}`
     );
 
     switch (action) {
@@ -110,6 +114,14 @@ const startHamsterAction = async (session: Session, action: Action) => {
             break;
         case 'dailyCombo':
             await handleDailyCombo(axiosInstance, session);
+            break;
+        case 'dailyMiniGame':
+            await handleMiniGame(
+                axiosInstance,
+                session,
+                profileData['id'],
+                totalKeys
+            );
             break;
         case 'allInOne':
             await Promise.allSettled([
@@ -141,6 +153,7 @@ export const hamsterKombatBot = async () => {
 
         const action = await select<Action>({
             message: 'Select an action',
+            pageSize: 10,
             choices: [
                 {
                     name: 'Solve Cieper',
@@ -161,6 +174,12 @@ export const hamsterKombatBot = async () => {
                 {
                     name: 'Claim Daily Combo',
                     value: 'dailyCombo',
+                    description: 'Claim the daily combo',
+                },
+                {
+                    name: 'Daily Mini Game',
+                    value: 'dailyMiniGame',
+                    description: 'Play the daily mini game',
                 },
                 {
                     name: 'All in One',
@@ -178,6 +197,7 @@ export const hamsterKombatBot = async () => {
 
         const session = await select<Session | 'all'>({
             message: 'Select a session',
+            pageSize: 10,
             choices: [
                 {
                     name: 'All Sessions',
