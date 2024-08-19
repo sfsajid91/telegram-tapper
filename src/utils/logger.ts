@@ -5,6 +5,22 @@ type Logger = {
     type: 'info' | 'error' | 'success' | 'warn';
 };
 
+const getCurrentTime = () => {
+    const now = new Date();
+
+    return now
+        .toLocaleString('en-CA', {
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit',
+            hour12: false, // Use 24-hour format
+        })
+        .replace(',', '');
+};
+
 const orange = chalk.hex('#FFC500');
 
 const cLogger = ({ message, type }: Logger) => {
@@ -27,7 +43,7 @@ const cLogger = ({ message, type }: Logger) => {
     const colorizedLevel = color(type.toUpperCase().padEnd(8));
     console.log(
         chalk.cyan(
-            `${orange(new Date().toISOString())} | ${chalk.bold(colorizedLevel)}  | ${orange(message)}`
+            `${orange(getCurrentTime())} | ${chalk.bold(colorizedLevel)}  | ${orange(message)}`
         )
     );
 };
