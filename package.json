@@ -28,6 +28,7 @@
         "@types/figlet": "^1.5.8",
         "@types/inquirer": "^8.2.10",
         "@types/node": "^20.14.9",
+        "@types/uuid": "^10.0.0",
         "@typescript-eslint/eslint-plugin": "^7.15.0",
         "@typescript-eslint/parser": "^7.15.0",
         "eslint": "^8",
@@ -42,7 +43,9 @@
         "dotenv": "^16.4.5",
         "figlet": "^1.7.0",
         "https-proxy-agent": "^7.0.5",
+        "p-queue": "^6.6.2",
         "telegram": "^2.22.2",
+        "uuid": "^10.0.0",
         "winston": "^3.13.0"
     }
 }

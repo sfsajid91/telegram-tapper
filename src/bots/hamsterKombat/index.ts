@@ -7,8 +7,9 @@ import { number, select, Separator } from '@inquirer/prompts';
 import axios, { AxiosInstance, type AxiosRequestConfig } from 'axios';
 import chalk from 'chalk';
 
-import { delay, handleAxiosError } from '@/utils/utils';
+import { handleAxiosError } from '@/utils/utils';
 import { HttpsProxyAgent } from 'https-proxy-agent';
+import PQueue from 'p-queue';
 import {
     buyBestUpgrades,
     handleAutoTapper,
@@ -16,6 +17,7 @@ import {
     handleDailyCombo,
     handleDailyReward,
     handleMiniGame,
+    handlePromoCode,
 } from './actions';
 import { login } from './api/auth';
 import { getIpInfo, getProfileData } from './api/scripts';
@@ -27,7 +29,8 @@ type Action =
     | 'allInOne'
     | 'dailyCombo'
     | 'buyBestUpgrades'
-    | 'dailyMiniGame';
+    | 'dailyMiniGame'
+    | 'handlePromoCodes';
 
 const handleBuyBestUpgrades = async (
     axiosInstance: AxiosInstance,
@@ -123,6 +126,9 @@ const startHamsterAction = async (session: Session, action: Action) => {
                 totalKeys
             );
             break;
+        case 'handlePromoCodes':
+            await handlePromoCode(axiosInstance, session);
+            break;
         case 'allInOne':
             await Promise.allSettled([
                 handleDailyCipher(axiosInstance, session),
@@ -140,6 +146,7 @@ const startHamsterAction = async (session: Session, action: Action) => {
                     earnPerTap,
                     availableTaps
                 ),
+                handlePromoCode(axiosInstance, session),
             ]);
             break;
 
@@ -188,6 +195,11 @@ export const hamsterKombatBot = async () => {
                     description: 'Play the daily mini game',
                 },
                 {
+                    name: 'Apply Promo Codes',
+                    value: 'handlePromoCodes',
+                    description: 'Apply promo codes',
+                },
+                {
                     name: 'All in One',
                     value: 'allInOne',
                     description: 'Run all the actions',
@@ -220,24 +232,18 @@ export const hamsterKombatBot = async () => {
         });
 
         if (session === 'all') {
-            for (const s of sessions) {
-                await startHamsterAction(s, action);
-                logger.success(
-                    `Finished ${chalk.bold.cyan('@' + s.username)}'s Session`
-                );
+            const queue = new PQueue({ concurrency: 2 });
 
-                // delay if there are a session left
-                if (s !== sessions[sessions.length - 1]) {
-                    console.log(
-                        chalk.yellow('='.repeat(process.stdout.columns))
-                    );
+            sessions.forEach((s) => {
+                queue.add(() => {
                     logger.info(
-                        'Waiting 10 seconds before starting the next session...'
+                        `Starting ${chalk.bold.cyan('@' + s.username)}'s Session`
                     );
-                    await delay(10 * 1000);
-                }
-                console.log('\n');
-            }
+                    return startHamsterAction(s, action);
+                });
+            });
+
+            await queue.onIdle();
         } else {
             await startHamsterAction(session, action);
         }

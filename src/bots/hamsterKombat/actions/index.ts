@@ -2,7 +2,7 @@ import type { Session } from '@/telegram/utils/sessions';
 import { Card } from '@/types';
 import { logger } from '@/utils/logger';
 import { delay, handleAxiosError } from '@/utils/utils';
-import { AxiosInstance } from 'axios';
+import { AxiosError, AxiosInstance } from 'axios';
 import chalk from 'chalk';
 import { randomInt } from 'node:crypto';
 import {
@@ -10,6 +10,7 @@ import {
     getMiniGameCipher,
     startDailyMiniGame,
 } from '../api/miniGame';
+import { applyPromoCode, getPromoCode, getPromoCodes } from '../api/promoCodes';
 import {
     buyUpgrade,
     claimDailyCipher,
@@ -115,7 +116,11 @@ export const handleDailyCipher = async (
     }
 };
 
-const buyCard = async (httpClient: AxiosInstance, cardId: string) => {
+const buyCard = async (
+    httpClient: AxiosInstance,
+    cardId: string,
+    session: Session
+) => {
     const upgrades = await getUpgrades(httpClient);
     const cards = upgrades['upgradesForBuy'] as Card[];
     const profileData = await getProfileData(httpClient);
@@ -148,7 +153,7 @@ const buyCard = async (httpClient: AxiosInstance, cardId: string) => {
                 const { level: levelToUpgrade } = cardToBuy.condition;
                 const level = upgrade.level;
                 for (let i = level - 1; i < levelToUpgrade; i++) {
-                    await buyCard(httpClient, upgradeId);
+                    await buyCard(httpClient, upgradeId, session);
                 }
                 break;
             }
@@ -170,10 +175,12 @@ const buyCard = async (httpClient: AxiosInstance, cardId: string) => {
             throw new Error('Card cooldown is more than 120 seconds');
         } else {
             logger.info(
-                `Card on cooldown: ${chalk.bold.cyan(cardToBuy.name)} - Cooldown: ${cardToBuy.cooldownSeconds} seconds`
+                `${chalk.bold.cyan('@' + session.username)} - Card on cooldown: ${chalk.bold.cyan(cardToBuy.name)} - Cooldown: ${cardToBuy.cooldownSeconds} seconds`
             );
 
-            logger.info('Waiting for cooldown to end');
+            logger.info(
+                `${chalk.bold.cyan('@' + session.username)} - Waiting for cooldown to end`
+            );
 
             await delay(cardToBuy.cooldownSeconds * 1000);
         }
@@ -183,13 +190,15 @@ const buyCard = async (httpClient: AxiosInstance, cardId: string) => {
     if (res) {
         const level = res[cardId]['level'];
         logger.info(
-            `Card bought: ${chalk.bold.cyan(cardToBuy.name)} - Price: ${chalk.bold.cyan(price)} - Level: ${chalk.bold.cyan(level)} - Balance: ${chalk.bold.cyan((balance - price).toFixed(2))}`
+            `${chalk.bold.cyan('@' + session.username)} - Card bought: ${chalk.bold.cyan(cardToBuy.name)} - Price: ${chalk.bold.cyan(price)} - Level: ${chalk.bold.cyan(level)} - Balance: ${chalk.bold.cyan((balance - price).toFixed(2))}`
         );
     }
 
     const randSleep = randomInt(5, 15);
 
-    logger.info(`Waiting ${randSleep} second before buying next card`);
+    logger.info(
+        `${chalk.bold.cyan('@' + session.username)} - Waiting ${randSleep} second before buying next card`
+    );
     await delay(randSleep * 1000);
 };
 
@@ -205,7 +214,7 @@ export const handleDailyCombo = async (
 
         if (isClaimed) {
             logger.info(
-                `${chalk.bold.cyan(session.username)} - Daily Combo already claimed`
+                `${chalk.bold.cyan('@' + session.username)} - Daily Combo already claimed`
             );
             return;
         }
@@ -224,7 +233,7 @@ export const handleDailyCombo = async (
         );
 
         for (const card of cardsTobuy) {
-            await buyCard(httpClient, card);
+            await buyCard(httpClient, card, session);
         }
 
         const claimStatus = await claimDailyCombo(httpClient);
@@ -235,7 +244,10 @@ export const handleDailyCombo = async (
         }
     } catch (error: unknown) {
         if (error instanceof Error) {
-            logger.error(error.message, 'handleDailyCombo');
+            logger.error(
+                `${chalk.bold.cyan('@' + session.username)} - ${error.message}`,
+                'handleDailyCombo'
+            );
         }
         handleAxiosError(error);
     }
@@ -257,7 +269,7 @@ export const handleAutoTapper = async (
     const status = await sendTaps(httpClient, remainingEnergy, randomTaps);
     if (status) {
         logger.info(
-            `${chalk.bold.cyan(session.username)} - Taps sent: ${randomTaps} - Energy claimed: ${claimedEnergy} - Remaining taps: ${remainingEnergy}`
+            `${chalk.bold.cyan('@' + session.username)} - Taps sent: ${chalk.bold.cyan(randomTaps)} - Energy claimed: ${chalk.bold.cyan(claimedEnergy)} - Remaining taps: ${chalk.bold.cyan(remainingEnergy)}`
         );
     }
 };
@@ -290,7 +302,9 @@ export const buyBestUpgrades = async (
         });
 
         if (filteredUpgrades.length === 0) {
-            logger.info('No profitable upgrades found');
+            logger.info(
+                `${chalk.bold.cyan('@' + session.username)} - No profitable upgrades found`
+            );
             return;
         }
 
@@ -299,7 +313,7 @@ export const buyBestUpgrades = async (
 
             if (res) {
                 const level = chalk.cyan(res[card.id]['level']);
-                logger.info(
+                logger.success(
                     `${chalk.bold.cyan('@' + session.username)} - Card bought: ${chalk.bold.cyan(card.name)} - Price: ${chalk.cyan(card.price)} - Level: ${level} - Profit: ${chalk.cyan(card.profitPerHourDelta)}`
                 );
             }
@@ -308,7 +322,7 @@ export const buyBestUpgrades = async (
             if (!isLastCard) {
                 const randSleep = randomInt(5, 15);
                 logger.info(
-                    `Waiting ${randSleep} second before buying ${chalk.bold.cyan(filteredUpgrades[index + 1].name)}`
+                    `${chalk.bold.cyan('@' + session.username)} - Waiting ${randSleep} second before buying ${chalk.bold.cyan(filteredUpgrades[index + 1].name)}`
                 );
                 await delay(5000);
             }
@@ -316,11 +330,11 @@ export const buyBestUpgrades = async (
             if (isLastCard) {
                 const randSleep = randomInt(8, 20);
                 logger.success(
-                    `Total ${chalk.bold.cyan(filteredUpgrades.length)} cards bought`
+                    `${chalk.bold.cyan('@' + session.username)} - Total ${chalk.bold.cyan(filteredUpgrades.length)} cards bought`
                 );
                 logger.info(
                     chalk.cyan(
-                        `Waiting ${randSleep} second before next iteration`
+                        `${chalk.bold.cyan('@' + session.username)} - Waiting ${randSleep} second before next iteration`
                     )
                 );
                 await delay(randSleep * 1000);
@@ -329,7 +343,10 @@ export const buyBestUpgrades = async (
         }
     } catch (error: unknown) {
         if (error instanceof Error) {
-            logger.error(error.message, 'buyBestUpgrades');
+            logger.error(
+                `${chalk.bold.cyan('@' + session.username)} - ${error.message}`,
+                'buyBestUpgrades'
+            );
         }
         handleAxiosError(error);
     }
@@ -414,7 +431,114 @@ export const handleMiniGame = async (
         }
     } catch (error: unknown) {
         if (error instanceof Error) {
-            logger.error(error.message, 'handleMiniGame');
+            logger.error(
+                `${chalk.bold.cyan('@' + session.username)} - ${error.message}`,
+                'handleMiniGame'
+            );
+        }
+        handleAxiosError(error);
+    }
+};
+
+export const handlePromoCode = async (
+    httpClient: AxiosInstance,
+    session: Session
+) => {
+    try {
+        const promosData = await getPromoCodes(httpClient);
+
+        const promoStates = promosData['states'];
+        const promos = promosData['promos'];
+
+        const promoActivates: Record<string, number> = {};
+
+        for (const promo of promoStates) {
+            promoActivates[promo.promoId] = promo.receiveKeysToday;
+        }
+
+        const appTokens: Record<string, string> = {
+            '61308365-9d16-4040-8bb0-2f4a4c69074c':
+                '61308365-9d16-4040-8bb0-2f4a4c69074c',
+            'fe693b26-b342-4159-8808-15e3ff7f8767':
+                '74ee0b5b-775e-4bee-974f-63e7f4d5bacb',
+            'b4170868-cef0-424f-8eb9-be0622e8e8e3':
+                'd1690a07-3780-4068-810f-9b5bbf2931b2',
+            'c4480ac7-e178-4973-8061-9ed5b2e17954':
+                '82647f43-3f87-402d-88dd-09a90025313f',
+            '43e35910-c168-4634-ad4f-52fd764a843f':
+                'd28721be-fd2d-4b45-869e-9f253b554e50',
+            'dc128d28-c45b-411c-98ff-ac7726fbaea4':
+                '8d1cc2ad-e097-4b86-90ef-7a27e19fb833',
+        };
+
+        for (const promo of promos) {
+            const promoId = promo.promoId as string;
+            const promoAppToken = appTokens[promoId];
+            const promoActivate = promoActivates[promoId];
+
+            if (!promoAppToken) {
+                continue;
+            }
+
+            const promoTitle = promo['title']['en'];
+            const keysPerDay = promo['keysPerDay'];
+            const keysPerCode = 1;
+
+            let todayPromoActivatesCount = promoActivate || 0;
+
+            if (todayPromoActivatesCount >= keysPerDay) {
+                logger.info(
+                    `${chalk.bold.cyan('@' + session.username)} - Promo Code already claimed today for ${chalk.bold.red(promoTitle)}`
+                );
+                continue;
+            }
+
+            while (todayPromoActivatesCount < keysPerDay) {
+                const promoCode = await getPromoCode(
+                    promoAppToken,
+                    promoId,
+                    promoTitle,
+                    session,
+                    15,
+                    20
+                ).catch(() => null);
+                if (!promoCode) {
+                    continue;
+                }
+
+                const { profileData, promoState } = await applyPromoCode(
+                    httpClient,
+                    promoCode
+                );
+
+                if (profileData && promoState) {
+                    const totalKeys = profileData['totalKeys'];
+                    todayPromoActivatesCount = promoState['receiveKeysToday'];
+
+                    logger.success(
+                        `${chalk.bold.cyan('@' + session.username)} - Promo code applied for ${chalk.bold.red(promoTitle)} - Total Keys: ${chalk.bold.red(totalKeys)} (${chalk.bold.green('+' + keysPerCode)}) - Keys claimed today: ${chalk.bold.red(todayPromoActivatesCount)}`
+                    );
+                } else {
+                    logger.error(
+                        `${chalk.bold.cyan('@' + session.username)} - Failed to apply promo code for ${chalk.bold.red(promoTitle)}`
+                    );
+                }
+
+                const randomSleep = randomInt(10, 15);
+
+                logger.info(
+                    `${chalk.bold.cyan('@' + session.username)} - Waiting for ${randomSleep} seconds before next promo code`
+                );
+
+                await delay(randomSleep * 1000);
+            }
+        }
+    } catch (error: unknown) {
+        if (error instanceof AxiosError) {
+            logger.error(
+                `${chalk.bold.cyan('@' + session.username)} - ${error.response?.data?.error_message || error.message}`,
+                'handlePromoCode'
+            );
         }
         handleAxiosError(error);
     }
