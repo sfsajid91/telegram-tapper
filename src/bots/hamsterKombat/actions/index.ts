@@ -209,7 +209,7 @@ export const handleDailyCombo = async (
     try {
         const upgrades = await getUpgrades(httpClient);
         const dailyCombo = upgrades['dailyCombo'];
-        // const upgradesForBuy = upgrades['upgradesForBuy'] as Card[];
+        const upgradesForBuy = upgrades['upgradesForBuy'] as Card[];
         const isClaimed = dailyCombo['isClaimed'];
 
         if (isClaimed) {
@@ -227,10 +227,27 @@ export const handleDailyCombo = async (
             );
             return;
         }
+
         // filter the cards that are not bought
         const cardsTobuy = comboCards.filter(
             (card) => !boughtCards.includes(card)
         );
+
+        const filteredUpgrades = upgradesForBuy.filter((card) =>
+            cardsTobuy.includes(card.id)
+        );
+
+        const totalCost = filteredUpgrades.reduce(
+            (acc, card) => acc + card.price,
+            0
+        );
+
+        if (totalCost >= 5000000) {
+            logger.error(
+                `${chalk.bold.cyan(session.username)} - Total cost of combo cards is more than 5M`
+            );
+            return;
+        }
 
         for (const card of cardsTobuy) {
             await buyCard(httpClient, card, session);
