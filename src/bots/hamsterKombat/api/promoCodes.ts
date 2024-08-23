@@ -8,13 +8,10 @@ import { HttpsProxyAgent } from 'https-proxy-agent';
 import { v4 as uuidv4 } from 'uuid';
 
 const generateClientId = () => {
-    const currentTimeMillis = Date.now();
-    const randomPart = Math.floor(Math.random() * 900) + 100;
-    const randomFirst = parseInt(
-        currentTimeMillis.toString().slice(0, 10) + randomPart.toString()
-    );
+    const timeMs = Date.now();
+    const randNum = '34' + Math.floor(Math.random() * 9) + 1;
 
-    return `${randomFirst}-3472514666961597005`;
+    return `${timeMs}-${randNum}0000000000000000`;
 };
 
 const generateEventId = () => {
