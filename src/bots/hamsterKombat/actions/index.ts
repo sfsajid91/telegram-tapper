@@ -97,7 +97,9 @@ export const handleDailyCipher = async (
         const bonus = chalk.bold.cyan(dailyCipher['bonusCoins']);
 
         if (!isClaimed) {
-            logger.info('Claiming Daily Cipher...');
+            logger.info(
+                `${chalk.bold.cyan('@' + session.username)} - Claiming Daily Cipher...`
+            );
             const decodedCipher = decodeCipher(cipher);
             const status = await claimDailyCipher(httpClient, decodedCipher);
 
@@ -223,7 +225,7 @@ export const handleDailyCombo = async (
 
         if (!comboCards.length) {
             logger.error(
-                `${chalk.bold.cyan(session.username)} - No combo cards found`
+                `${chalk.bold.cyan('@' + session.username)} - No combo cards found`
             );
             return;
         }
@@ -244,7 +246,7 @@ export const handleDailyCombo = async (
 
         if (totalCost >= 5000000) {
             logger.error(
-                `${chalk.bold.cyan(session.username)} - Total cost of combo cards is more than 5M`
+                `${chalk.bold.cyan('@' + session.username)} - Total cost of combo cards is more than 5M`
             );
             return;
         }
@@ -256,7 +258,7 @@ export const handleDailyCombo = async (
         const claimStatus = await claimDailyCombo(httpClient);
         if (claimStatus) {
             logger.info(
-                `${chalk.bold.cyan(session.username)} - Daily Combo claimed`
+                `${chalk.bold.cyan('@' + session.username)} - Daily Combo claimed`
             );
         }
     } catch (error: unknown) {
@@ -516,8 +518,8 @@ export const handlePromoCode = async (
                     promoId,
                     promoTitle,
                     session,
-                    15,
-                    20
+                    20,
+                    promoTitle === 'My Clone Army' ? 120 : 20
                 ).catch(() => null);
                 if (!promoCode) {
                     continue;
