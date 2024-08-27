@@ -56,3 +56,9 @@ type LinkWithoutCheck = {
     _type: 'LinkWithoutCheck';
     link: string;
 };
+
+export type GameCode = {
+    promoId: string;
+    appToken: string;
+    minWaitAfterLogin: number;
+};

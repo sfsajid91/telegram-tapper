@@ -1,4 +1,5 @@
 import type { Session } from '@/telegram/utils/sessions';
+import type { GameCode } from '@/types';
 import { logger } from '@/utils/logger';
 import { delay } from '@/utils/utils';
 import type { AxiosInstance, AxiosRequestConfig } from 'axios';
@@ -22,6 +23,14 @@ const escapeHtml = (text: string) => {
     return text.replace('<', '\\<').replace('>', '\\>');
 };
 
+export const getGames = async (httpClient: AxiosInstance) => {
+    const response = await httpClient.post<GameCode[]>(
+        'https://api21.datavibe.top/api/Games',
+        {}
+    );
+    return response.data;
+};
+
 export const getPromoCodes = async (httpClient: AxiosInstance) => {
     const response = await httpClient.post(
         'https://api.hamsterkombatgame.io/clicker/get-promos',
@@ -35,6 +44,7 @@ export const getPromoCode = async (
     promoId: string,
     promoTitle: string,
     session: Session,
+    minWaitAfterLogin = 20,
     maxAttempts = 1,
     eventTimeout = 30
 ) => {
@@ -80,9 +90,12 @@ export const getPromoCode = async (
     axiosInstance.defaults.headers.Authorization = `Bearer ${accessToken}`;
 
     logger.info(
-        `${chalk.bold.cyan(`@${session.username}`)} - Logged in to api.gamepromo - Waiting 10 seconds before getting promo code`
+        `${chalk.bold.cyan(`@${session.username}`)} - Logged in to api.gamepromo - Waiting ${chalk.bold.cyan(
+            minWaitAfterLogin
+        )} seconds before getting promo code`
     );
-    await delay(10000);
+    const waitTime = (minWaitAfterLogin + 5) * 1000;
+    await delay(waitTime);
 
     for (let attempts = 0; attempts < maxAttempts; attempts++) {
         try {
