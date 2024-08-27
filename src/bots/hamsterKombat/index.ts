@@ -146,7 +146,7 @@ const startHamsterAction = async (session: Session, action: Action) => {
                     earnPerTap,
                     availableTaps
                 ),
-                handlePromoCode(axiosInstance, session),
+                // handlePromoCode(axiosInstance, session),
             ]);
             break;
 
