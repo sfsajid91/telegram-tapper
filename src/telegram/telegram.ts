@@ -143,6 +143,7 @@ export const getTgUrl = async (
             bot: peer,
             platform: 'android',
             peer,
+            fromBotMenu: false,
         })
     );
 

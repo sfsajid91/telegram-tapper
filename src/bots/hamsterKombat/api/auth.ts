@@ -1,8 +1,9 @@
 import { fileLogger } from '@/utils/fileLogger';
+import { convertTgWebAppData } from '@/utils/getTgWebdata';
 import { logger } from '@/utils/logger';
 import axios, { type AxiosRequestConfig } from 'axios';
 import { HttpsProxyAgent } from 'https-proxy-agent';
-import { convertTgWebAppData, generateRandomVisitorId } from '../utils/scripts';
+import { generateRandomVisitorId } from '../utils/scripts';
 
 export const login = async (tgWebUrl: string, proxyString?: string) => {
     try {

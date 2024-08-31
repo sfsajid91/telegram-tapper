@@ -9,15 +9,6 @@ export const generateRandomVisitorId = () => {
     return visitorId;
 };
 
-export const convertTgWebAppData = (tgWebAppData: string) => {
-    // Extract and decode the tgWebAppData part of the URL
-    const encodedData = tgWebAppData
-        .split('tgWebAppData=')[1]
-        .split('&tgWebAppVersion')[0];
-    const decodedData = decodeURIComponent(decodeURIComponent(encodedData));
-    return decodedData;
-};
-
 export const decodeCipher = (cipher: string) => {
     // Remove the third character
     const encoded = cipher.slice(0, 3) + cipher.slice(4);
