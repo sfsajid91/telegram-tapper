@@ -1,5 +1,5 @@
-import { isDifferenceLessThanOneDay } from '@/utils/time';
 import type { AxiosInstance } from 'axios';
+import moment from 'moment-timezone';
 
 export const getMeTelegram = async (httpClient: AxiosInstance) => {
     const response = await httpClient.post(
@@ -116,15 +116,17 @@ export const getComboCards = async (
     httpClient: AxiosInstance
 ): Promise<string[]> => {
     const response = await httpClient.get(
-        'https://nabikaz.github.io/HamsterKombat-API/config.json',
+        'https://api21.datavibe.top/api/GetCombo',
         {}
     );
-    const timestamp = response.data.updated * 1000;
-    const comboDate = new Date(timestamp);
-    const currentDate = new Date();
-    const isValidCombo = isDifferenceLessThanOneDay(comboDate, currentDate);
-    if (isValidCombo) {
-        return response.data.dailyCards || [];
+    const givenDate = response.data.date;
+    const parsedDate = moment(givenDate, 'DD-MM-YY');
+    const utcNow = moment().utcOffset(-6);
+    // const isToday = parsedDate.isSame(utcNow, 'day');
+    const isToday = parsedDate.isSameOrBefore(utcNow, 'day');
+
+    if (isToday) {
+        return response.data.combo || [];
     }
     return [];
 };

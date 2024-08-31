@@ -43,6 +43,7 @@
         "dotenv": "^16.4.5",
         "figlet": "^1.7.0",
         "https-proxy-agent": "^7.0.5",
+        "moment-timezone": "^0.5.45",
         "p-queue": "^6.6.2",
         "telegram": "^2.22.2",
         "uuid": "^10.0.0",
