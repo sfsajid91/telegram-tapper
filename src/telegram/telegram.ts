@@ -1,10 +1,9 @@
-import proxyFile from '@/../proxy.json';
 import { addSession, getSession } from '@/telegram/utils/sessions';
 import { extractProxyDetails } from '@/utils/extractProxy';
 import { getBotUrl } from '@/utils/getBotUrl';
 import { logger } from '@/utils/logger';
+import { input } from '@inquirer/prompts';
 import dotenv from 'dotenv';
-import readline from 'node:readline/promises';
 import { Api, TelegramClient } from 'telegram';
 import type { TelegramClientParams } from 'telegram/client/telegramBaseClient';
 import { StringSession } from 'telegram/sessions';
@@ -26,10 +25,6 @@ const envValidation = () => {
 export const createSession = async () => {
     envValidation();
 
-    const rl = readline.createInterface({
-        input: process.stdin,
-        output: process.stdout,
-    });
     const stringSession = new StringSession();
 
     logger.info('Creating a new session...');
@@ -38,7 +33,12 @@ export const createSession = async () => {
         connectionRetries: 5,
     };
 
-    const proxy = extractProxyDetails(proxyFile.proxy);
+    const inputProxy = await input({
+        message:
+            'Enter your socks5 proxy (socks5://username:password@ip:port):',
+    });
+
+    const proxy = extractProxyDetails(inputProxy);
 
     if (proxy && proxy.isSocks) {
         clientOptions.proxy = {
@@ -62,10 +62,11 @@ export const createSession = async () => {
     client.setLogLevel('none');
 
     await client.start({
-        phoneNumber: async () => await rl.question('Enter your phone number: '),
-        password: async () => await rl.question('Enter your password: '),
+        phoneNumber: async () =>
+            await input({ message: 'Enter your phone number:' }),
+        password: async () => await input({ message: 'Enter your password:' }),
         phoneCode: async () =>
-            await rl.question('Enter the code sent to your phone: '),
+            await input({ message: 'Enter the code sent to your phone:' }),
         onError: (err) => {
             logger.error(err.message, 'createSession');
         },
@@ -75,8 +76,7 @@ export const createSession = async () => {
 
     const session = client.session.save();
 
-    await addSession(self.firstName!, session!, self.username!);
-    rl.close();
+    await addSession(self.firstName!, session!, self.username!, inputProxy);
     await client.disconnect();
 };
 
@@ -85,11 +85,6 @@ export const getTgUrl = async (
     username: string,
     botName: string
 ) => {
-    const rl = readline.createInterface({
-        input: process.stdin,
-        output: process.stdout,
-    });
-
     const session = await getSession(sessionName, username);
 
     if (!session) {
@@ -126,10 +121,11 @@ export const getTgUrl = async (
     client.setLogLevel('none');
 
     await client.start({
-        phoneNumber: async () => await rl.question('Enter your phone number: '),
-        password: async () => await rl.question('Enter your password: '),
+        phoneNumber: async () =>
+            await input({ message: 'Enter your phone number:' }),
+        password: async () => await input({ message: 'Enter your password:' }),
         phoneCode: async () =>
-            await rl.question('Enter the code sent to your phone: '),
+            await input({ message: 'Enter the code sent to your phone:' }),
         onError: (err) => {
             logger.error(err.message, 'createSession');
         },
@@ -147,7 +143,6 @@ export const getTgUrl = async (
         })
     );
 
-    rl.close();
     await client.disconnect();
 
     return webview.url;

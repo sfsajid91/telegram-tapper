@@ -31,10 +31,15 @@ export const getSession = async (name: string, username: string) => {
 export const addSession = async (
     name: string,
     session: string,
-    username: string
+    username: string,
+    proxy?: string
 ) => {
     const sessions = await getSessions();
-    sessions.push({ name, session, username });
+    const newSession: Session = { name, session, username };
+    if (proxy) {
+        newSession.proxy = proxy;
+    }
+    sessions.push(newSession);
     // check if the folder exists or not
     await fs.mkdir(sessionPath.split('/').slice(0, -1).join('/'), {
         recursive: true,
