@@ -48,10 +48,9 @@ export const handleDailyReward = async (
 
     for (const task of filteredTasks) {
         const taskId = String(task['id']);
-        const rewardCoins = task['rewardCoins'];
         const isCompleted = task['isCompleted'];
 
-        if (!isCompleted && rewardCoins > 0) {
+        if (!isCompleted) {
             logger.info(
                 `${chalk.bold.cyan('@' + session.username)} - Waiting for 5 seconds before completing ${chalk.bold.cyan(taskId)} Task`
             );
@@ -67,13 +66,13 @@ export const handleDailyReward = async (
 
                 if (taskDetails['days']) {
                     logger.success(
-                        `${chalk.bold.cyan('@' + session.username)} - Completed ${chalk.bold.cyan(taskId)} Task - Reward: ${chalk.bold.cyan(rewardCoins)} - Days: ${chalk.bold.cyan(taskDetails['days'])} - Balance: ${chalk.bold.cyan(balanceCoins)}`
+                        `${chalk.bold.cyan('@' + session.username)} - Completed ${chalk.bold.cyan(taskId)} Task - Days: ${chalk.bold.cyan(taskDetails['days'])} - Weeks: ${chalk.bold.cyan(taskDetails['weeks'])} - Balance: ${chalk.bold.cyan(balanceCoins)}`
                     );
                     return;
                 }
 
                 logger.success(
-                    `${chalk.bold.cyan('@' + session.username)} - Completed ${chalk.bold.cyan(taskId)} Task - Reward: ${chalk.bold.cyan(rewardCoins)} - Balance: ${chalk.bold.cyan(balanceCoins)}`
+                    `${chalk.bold.cyan('@' + session.username)} - Completed ${chalk.bold.cyan(taskId)} Task - Balance: ${chalk.bold.cyan(balanceCoins)}`
                 );
             } else {
                 logger.info(
