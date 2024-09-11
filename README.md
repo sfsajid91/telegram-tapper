@@ -18,7 +18,12 @@ To get started with Telegram Tapper, follow these steps:
 2. Click on the "API development tools" link.
 3. Fill out the form to create a new application.
 4. Copy the "App api_id" and "App api_hash" values.
-5. Save the values in `.env` file in the root directory of the project.
+5. Copy `.env.example` to `.env` and update the values with the ones you copied.
+
+    ```env
+    TELEGRAM_API_ID=your api id
+    TELEGRAM_API_HASH=your api hash
+    ```
 
 ## Usage
 
